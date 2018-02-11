@@ -18,4 +18,6 @@ class map{
 		int get_goal_Y();
 		int get_width();
 		int get_height();
+		int X_coordinate(int position);
+		int	Y_coordinate(int position);
 };

@@ -21,3 +21,11 @@ map::map(const &map other){
 bool load_map(string filename){
 
 }
+
+int map::X_coordinate(int position){
+	return position%width;
+}
+int map::Y_coordiante(int position){
+	int retval = 1.0*position;
+	return (int)ceil(position/width);
+}
