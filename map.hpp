@@ -1,23 +1,35 @@
 #ifndef __MAP_H__
 #define __MAP_H__
 
-#include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <stack>
+#include <queue>
+
+#include "point.hpp"
+
 using namespace std;
-class map{
+
+class Map{
 	private:
-		int start_X, start_Y, goal_X, goal_Y, width, height;
+		char** maze;
+		int width;
+		int height;
+		point start;
+		point* goals;
+		int numGoals;
+		int numExpanded;
+		int pathLength;
 	public:
-		map();
-		map(const &map other);
-		bool load_map(string filename);
-		int get_start_X();
-		int get_start_Y();
-		int get_goal_X();
-		int get_goal_Y();
-		int get_width();
-		int get_height();
-		int X_coordinate(int position);
-		int	Y_coordinate(int position);
+		Map(string filename);
+		void printMaze();
+		void DFS();
+		void BFS();
+		void Greedy_BFS();
+		void A_Star();
+		int BFS_Multiple(int start_, int end_);
+		void Multiple();
 };
+
+#endif
