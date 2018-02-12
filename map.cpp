@@ -19,7 +19,7 @@ Map::Map(string filename){
 	for(int i = 0; i < width; i++)
 		maze[i] = new char[height];
 
-	point goals_[20];
+	point goals_[50];
 	numGoals = 0;
 	int h = 0;
 	myfile.open(filename, std::ifstream::in);
@@ -337,10 +337,19 @@ void Map::A_Star() {
 
 void Map::Multiple() {
 	vector<vector<int>> distances_all(numGoals + 1);
-	for(int i = 0; i < numGoals + 1; i++) {
+	for(int i = 0; i < numGoals + 1; i++)
 		distances_all[i] = vector<int>(numGoals + 1);
-		for(int j = i + 1; j < numGoals + 1; j++)
+	for(int i = 0; i < numGoals + 1; i++) {
+		for(int j = i + 1; j < numGoals + 1; j++) {
 			distances_all[i][j] = BFS_Multiple(i, j);
+			distances_all[j][i] = BFS_Multiple(i, j);
+		}
+	}
+
+	for(int i = 0; i < numGoals + 1; i++) {
+		for(int j = 0; j < numGoals + 1; j++)
+			cout << distances_all[i][j] << ' ';
+		cout << '\n';
 	}
 }
 
