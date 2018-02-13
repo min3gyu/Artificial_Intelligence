@@ -11,6 +11,11 @@
 
 using namespace std;
 
+/* point class
+ * used in part 1 and 2:
+ * the maze and its relevant information is stored in Map class
+ * search algorithms implemented to find optimal paths
+ */
 class Map{
 	private:
 		char** maze;
@@ -21,8 +26,9 @@ class Map{
 		int numGoals;
 		int numExpanded;
 		int pathLength;
+		string outputfilename;
 	public:
-		Map(string filename);
+		Map(string filename, string outputname);
 		void printMaze();
 		void DFS();
 		void BFS();
