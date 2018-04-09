@@ -1,4 +1,3 @@
-
 import math
 import random
 
@@ -126,13 +125,14 @@ def shuffle_data(data, labels):
     random.shuffle(packed)
     return unpack_data(packed)
 
-
-if __name__ == '__main__':
-    data, label = parse_digit_data("./digitdata/optdigits-orig_train.txt", bias = False)
-    generate_weight_vec(rand = False)
+def driver(rand, bias, shuffle):
+    data, label = parse_digit_data("./digitdata/optdigits-orig_train.txt", bias)
+    generate_weight_vec(rand)
     for i in range(0, 10):
-        training(data, label, i, shuffle = True)
-        testing(bias = False)
+        training(data, label, i, shuffle)
+        testing(bias)
         # print("Epoch: {}".format(i))
         # if i == 3:
         #     testing()
+
+driver(rand = True, bias = False, shuffle = True)
