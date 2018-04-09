@@ -1,17 +1,26 @@
+
 import math
 import random
 
 LEN = 1024
 w_vec = []
-BIAS = 1
 
-for i in range(0, 10):
-    vec = []
-    for j in range(0, LEN):
-        vec += [random.uniform(-1, 1)]
-    w_vec.append(vec)
-
-def parse_digit_data(path_to_file):
+def generate_weight_vec(rand):
+    globals
+    for i in range(0, 10):
+        vec = []
+        for j in range(0, LEN):
+            if rand:
+                vec += [random.uniform(-1, 1)]
+            else:
+                vec += [0]
+        w_vec.append(vec)
+    for e in w_vec:
+        assert (len(e) == LEN)
+def parse_digit_data(path_to_file, bias):
+    global LEN
+    if bias:
+        LEN = 1025
     data = []
     labels = []
     single_digit = []
@@ -20,6 +29,8 @@ def parse_digit_data(path_to_file):
             for i in range(0, len(lines)):
                 if lines[i] == " ":
                     labels.append(int(lines[1]))
+                    if bias:
+                        single_digit.append(1)
                     data.append(single_digit)
                     single_digit = []
                     break
@@ -30,11 +41,13 @@ def parse_digit_data(path_to_file):
 
 
 
-def training(data, labels, ep):
+def training(data, labels, ep, shuffle):
     globals
+    if shuffle:
+        data, labels = shuffle_data(data, labels)
+
     for i in range (0, len(data)):
         curr = data[i]
-        # curr.append(1)
         label = labels[i]
 
         dot_p = []
@@ -48,9 +61,9 @@ def training(data, labels, ep):
                 w_vec[classification][k] -= (curr[k] * n)
                 w_vec[label][k] += (curr[k] * n)
 
-def testing():
+def testing(bias):
     globals
-    test_data, test_label = parse_digit_data("./digitdata/optdigits-orig_test.txt")
+    test_data, test_label = parse_digit_data("./digitdata/optdigits-orig_test.txt", bias)
     result = []
     for i in range(0, len(test_label)):
         curr = test_data[i]
@@ -63,12 +76,27 @@ def testing():
         classification = dot_p.index(max(dot_p))
         result += [classification]
 
-    print(result)
     num = 0
+    num_occ = [0] * 10
     for i in range(0, len(test_label)):
+        num_occ[result[i]] += 1
         if result[i] == test_label[i]:
             num += 1
-    print("Rate: {}".format(num / len(test_label)))
+    print("Overall Accuracy: {}".format(num / len(test_label)))
+
+    # confusion_matrix
+    confusion_matrix = [[0] * 10 for x in range(0, 10)]
+    for i in range(0, len(result)):
+        confusion_matrix[result[i]][test_label[i]] += 1
+
+    for i in range(0, 10):
+        for j in range(0, 10):
+            if confusion_matrix[i][j] is not 0:
+                confusion_matrix[i][j] /= num_occ[i]
+                confusion_matrix[i][j] = round(confusion_matrix[i][j], 5) * 100
+
+    # for e in confusion_matrix:
+    #     print(e)
 
 def dot(a, b):
     assert(len(a) == len(b))
@@ -77,10 +105,34 @@ def dot(a, b):
         result += (a[i] * b[i])
     return result
 
-def signum(n):
-    return 1 if n >= 0 else -1
+def pack_data(data, labels):
+    packed = []
+    for i in range(0, len(data)):
+        packed += [[data[i], labels[i]]]
+    return packed
 
-data, label = parse_digit_data("./digitdata/optdigits-orig_train.txt")
-for i in range(0, 10):
-    training(data, label, i)
-    testing()
+def unpack_data(packed):
+    data = []
+    label = []
+    for i in range(0, len(packed)):
+        curr_data, curr_label = packed[i]
+        data.append(curr_data)
+        label.append(curr_label)
+    return data, label
+
+def shuffle_data(data, labels):
+    print("*****Shuffling*****")
+    packed = pack_data(data, labels)
+    random.shuffle(packed)
+    return unpack_data(packed)
+
+
+if __name__ == '__main__':
+    data, label = parse_digit_data("./digitdata/optdigits-orig_train.txt", bias = False)
+    generate_weight_vec(rand = False)
+    for i in range(0, 10):
+        training(data, label, i, shuffle = True)
+        testing(bias = False)
+        # print("Epoch: {}".format(i))
+        # if i == 3:
+        #     testing()
