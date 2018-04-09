@@ -1,164 +1,148 @@
-from math import log as ln
 from matplotlib import pyplot as plt
+import math
+import numpy as np
+import random
 
-LEN = 32
-def parse_digit_data(path_to_file):
+LEN = 1024
+w_vec = []
+
+def generate_weight_vec(rand):
+    globals
+    for i in range(0, 10):
+        vec = []
+        for j in range(0, LEN):
+            if rand:
+                vec += [random.uniform(-1, 1)]
+            else:
+                vec += [0]
+        w_vec.append(vec)
+    for e in w_vec:
+        assert (len(e) == LEN)
+def parse_digit_data(path_to_file, bias):
+    global LEN
+    if bias:
+        LEN = 1025
     data = []
-    digit = []
     labels = []
+    single_digit = []
     with open(path_to_file, "r") as digit_data:
         for lines in digit_data:
-            if lines[0] == " ":
-                labels += [int(lines[1])]
-                data.append(digit)
-                digit = []
-            else:
-                digit.append([int(x) for x in lines if x is not '\n'])
+            for i in range(0, len(lines)):
+                if lines[i] == " ":
+                    labels.append(int(lines[1]))
+                    if bias:
+                        single_digit.append(1)
+                    data.append(single_digit)
+                    single_digit = []
+                    break
+                elif lines[i] != '\n':
+                    single_digit.append(int(lines[i]))
 
     return data, labels
 
-def training(smoothing=1):
-    data, labels = parse_digit_data("./digitdata/optdigits-orig_train.txt")
-    likelihood = []
-    num_occ = [0] * 10
 
-    for i in range(0, 10):
-        e = []
-        for j in range(0, LEN):
-            l = [0] * 32
-            e.append(l)
-        likelihood.append(e)
 
-    for i in range(0, len(labels)):
-        curr = labels[i]
-        num_occ[curr] += 1
-        for x in range(0, LEN):
-            for y in range(0, LEN):
-                if data[i][x][y] == 1:
-                    likelihood[curr][x][y] += 1
+def training(data, labels, ep, shuffle):
+    globals
+    if shuffle:
+        data, labels = shuffle_data(data, labels)
 
-    # P(Fij = f | class)
-    for i in range(0, 10):
-        for x in range(0, LEN):
-            for y in range(0, LEN):
-                likelihood[i][x][y] += smoothing
-                likelihood[i][x][y] /= (num_occ[i] + smoothing * 2)
+    for i in range (0, len(data)):
+        curr = data[i]
+        label = labels[i]
 
-    prior = [x/len(labels) for x in num_occ]
-    return data, labels, likelihood, prior
-
-def test_digit(s):
-    test_data, test_labels = parse_digit_data("./digitdata/optdigits-orig_test.txt")
-    orig_data, orig_labels, likelihood, prior = training(s)
-
-    MAP = []
-    for i in range(0, len(test_labels)):
-        l = []
+        dot_p = []
         for j in range(0, 10):
-            result = ln(prior[j])
-            for x in range(0, LEN):
-                for y in range(0, LEN):
-                    if test_data[i][x][y] == 1:
-                        result += ln(likelihood[j][x][y])
-                    elif test_data[i][x][y] == 0:
-                        result += ln(1  - likelihood[j][x][y])
-            l += [result]
+            dot_p.append(dot(w_vec[j], curr))
 
-        MAP += [l.index(max(l))]
+        classification = dot_p.index(max(dot_p))
+        if classification != label:
+            n = 1 / math.sqrt(((i + 1) + ep * len(labels)))
+            for k in range(0, LEN):
+                w_vec[classification][k] -= (curr[k] * n)
+                w_vec[label][k] += (curr[k] * n)
 
-    # Calculate Accuracy and construct confusion matrix
-    num_correct = 0
+def testing(bias):
+    globals
+    test_data, test_label = parse_digit_data("./digitdata/optdigits-orig_test.txt", bias)
+    result = []
+    for i in range(0, len(test_label)):
+        curr = test_data[i]
+        label = test_label[i]
+
+        dot_p = []
+        for j in range(0, 10):
+            dot_p.append(dot(w_vec[j], curr))
+
+        classification = dot_p.index(max(dot_p))
+        result += [classification]
+
+    num = 0
+    num_occ = [0] * 10
+    for i in range(0, len(test_label)):
+        num_occ[result[i]] += 1
+        if result[i] == test_label[i]:
+            num += 1
+    print("Overall Accuracy: {}".format(num / len(test_label)))
+
+    # confusion_matrix
     confusion_matrix = [[0] * 10 for x in range(0, 10)]
-    test_num_occur = [0] * 10
-    for i in range(0, len(MAP)):
-        M_elem = MAP[i]
-        label_elem = test_labels[i]
-        test_num_occur[label_elem] += 1
-        if M_elem == label_elem:
-            num_correct += 1
-        confusion_matrix[label_elem][M_elem] += 1
-    print("Overall accuracy: {:.2f}%".format(num_correct / len(test_labels) * 100))
+    for i in range(0, len(result)):
+        confusion_matrix[result[i]][test_label[i]] += 1
 
-    # Confusion Matrix(the negative percentage is used to find the highest and lowest posterior probabilities)
-    for i in range(0, len(confusion_matrix)):
-        for j in range(0, len(confusion_matrix[i])):
+    for i in range(0, 10):
+        for j in range(0, 10):
             if confusion_matrix[i][j] is not 0:
-                confusion_matrix[i][j] /= test_num_occur[i]
-                confusion_matrix[i][j] = round(confusion_matrix[i][j], 5)
+                confusion_matrix[i][j] /= num_occ[i]
+                confusion_matrix[i][j] = round(confusion_matrix[i][j], 5) * 100
 
-    # print("\nCONFUSION MATRIX")
     # for e in confusion_matrix:
     #     print(e)
 
-    classification_rate(MAP, test_labels, test_num_occur)
-    # high_low_posterior(likelihood, prior, orig_data, orig_labels)
-    # draw_four_odd_ratio(likelihood)
+def dot(a, b):
+    assert(len(a) == len(b))
+    result = 0
+    for i in range (0, LEN):
+        result += (a[i] * b[i])
+    return result
 
-def classification_rate(result_label, orig_label, num_occ):
-    rate = [0] * 10
-    for i in range(0, len(result_label)):
-        result_curr = result_label[i]
-        orig_curr = orig_label[i]
-        if result_curr == orig_curr:
-            rate[result_curr] += 1
-    for i in range(0, 10):
-        print("Classification rate for digit {} is {:.2f}%".format(i, (rate[i] / num_occ[i]) * 100))
+def pack_data(data, labels):
+    packed = []
+    for i in range(0, len(data)):
+        packed += [[data[i], labels[i]]]
+    return packed
 
-def draw_four_odd_ratio(likelihood):
-    # 9.76%
-    draw_odd_ratio(likelihood, 2, 8)
+def unpack_data(packed):
+    data = []
+    label = []
+    for i in range(0, len(packed)):
+        curr_data, curr_label = packed[i]
+        data.append(curr_data)
+        label.append(curr_label)
+    return data, label
 
-    # 6.90%
-    draw_odd_ratio(likelihood, 5, 9)
+def shuffle_data(data, labels):
+    print("*****Shuffling*****")
+    packed = pack_data(data, labels)
+    random.shuffle(packed)
+    return unpack_data(packed)
 
-    # 6.78%
-    draw_odd_ratio(likelihood, 4, 7)
+def driver(rand, bias, shuffle, num_epoch):
+    data, label = parse_digit_data("./digitdata/optdigits-orig_train.txt", bias)
+    generate_weight_vec(rand)
+    for i in range(0, num_epoch):
+        training(data, label, i, shuffle)
+        # print("Epoch {}".format(i))
+        # testing(bias)
+        if i == num_epoch - 1:
+            print("Epoch {}:".format(i), end = " ")
+            testing(bias)
+            weight_visualization()
 
-    # 6.06%
-    draw_odd_ratio(likelihood, 3, 9)
+def weight_visualization():
+    globals
+    for i in range(0, len(w_vec)):
+        plt.imshow(np.array(w_vec[i]).reshape(32, 32), interpolation = 'nearest')
+        plt.show()
 
-def draw_odd_ratio(likelihood, r, c):
-    plt.imshow(likelihood[r], interpolation = 'nearest')
-    plt.show()
-
-    plt.imshow(likelihood[c], interpolation = 'nearest')
-    plt.show()
-
-    ratio = []
-    for x in range(0, LEN):
-        row = []
-        for y in range(0, LEN):
-            row += [ln(likelihood[r][x][y] / likelihood[c][x][y])]
-        ratio.append(row)
-
-    plt.imshow(ratio, interpolation = 'nearest')
-    plt.show()
-
-def high_low_posterior(likelihood, prior, orig_data, orig_label):
-    digit_data = []
-    digit_index = []
-    for i in range(0, 10):
-        digit_data.append([float('inf'), float('-inf')])
-        digit_index.append([0, 0])
-
-    for i in range(0, len(orig_label)):
-        curr = orig_label[i]
-        result = ln(prior[curr])
-        for x in range(0, LEN):
-            for y in range(0, LEN):
-                if orig_data[i][x][y] == 1:
-                    result += ln(likelihood[curr][x][y])
-        if result < digit_data[curr][0]:
-            digit_data[curr][0] = result
-            digit_index[curr][0] = i
-        if result > digit_data[curr][1]:
-            digit_data[curr][1] = result
-            digit_index[curr][1] = i
-
-    index = [[x + 1,  y + 1] for x, y in digit_index]
-    print(index)
-    line_no = [[(x + 1) * 33, (y + 1) * 33] for x, y in digit_index]
-    print(line_no)
-
-if __name__ == '__main__':
-    test_digit(1.2)
+driver(rand = False, bias = False, shuffle = False, num_epoch = 1)
