@@ -1,4 +1,6 @@
+from matplotlib import pyplot as plt
 import math
+import numpy as np
 import random
 
 LEN = 1024
@@ -50,7 +52,10 @@ def training(data, labels, ep, shuffle):
         label = labels[i]
 
         dot_p = []
+        n = 0
         for j in range(0, 10):
+            x = dot(w_vec[j], curr)
+            n += np.exp(x)
             dot_p.append(dot(w_vec[j], curr))
 
         classification = dot_p.index(max(dot_p))
@@ -70,6 +75,7 @@ def testing(bias):
 
         dot_p = []
         for j in range(0, 10):
+            # print(dot(w_vec[j], curr))
             dot_p.append(dot(w_vec[j], curr))
 
         classification = dot_p.index(max(dot_p))
@@ -125,14 +131,22 @@ def shuffle_data(data, labels):
     random.shuffle(packed)
     return unpack_data(packed)
 
-def driver(rand, bias, shuffle):
+def driver(rand, bias, shuffle, num_epoch):
     data, label = parse_digit_data("./digitdata/optdigits-orig_train.txt", bias)
     generate_weight_vec(rand)
-    for i in range(0, 10):
+    for i in range(0, num_epoch):
         training(data, label, i, shuffle)
-        testing(bias)
-        # print("Epoch: {}".format(i))
-        # if i == 3:
-        #     testing()
+        # print("Epoch {}".format(i))
+        # testing(bias)
+        if i == num_epoch - 1:
+            print("Epoch {}:".format(i), end = " ")
+            testing(bias)
+            weight_visualization()
 
-driver(rand = True, bias = False, shuffle = True)
+def weight_visualization():
+    globals
+    for i in range(0, len(w_vec)):
+        plt.imshow(np.array(w_vec[i][:1024]).reshape(32, 32), interpolation = 'nearest')
+        plt.show()
+
+driver(rand = False, bias = False, shuffle = False, num_epoch = 4)
