@@ -40,8 +40,23 @@ def parse_digit_data(path_to_file, bias):
 
     return data, labels
 
-def differential_error(learning_rate, target, output, x, index):
-    return learning_rate * (target - output) * x[index]
+def tanh(x):
+    return np.sinh(x)/np.cosh(x)
+
+def tanh_prime(x):
+    return 1 / (np.cosh(x) ** 2)
+
+def differential_error(y, x, index):
+    constanct = 2 * 1024 / 4
+    error = 0
+    for i in range(0, 1024):
+        dot_product = dot(w_vec[index], x)
+        tmp = tanh(dot_product) - y
+        tmp *= tanh_prime(dot_product)
+        tmp *= x[i]
+        error += tmp
+
+    return constanct * error
 
 def training(data, labels, ep, shuffle):
     globals
@@ -67,8 +82,8 @@ def training(data, labels, ep, shuffle):
             n = 1 / math.sqrt(((i + 1) + ep * len(labels)))
             for k in range(0, LEN):
                 #### ERROR FUNCTION ####
-                w_vec[classification][k] -= (curr[k] * n)
-                w_vec[label][k] += (curr[k] * n)
+                w_vec[classification][k] -= (differential_error(-1, curr, label) * n)
+                w_vec[label][k] -= (differential_error(1, curr, label) * n)
 
 def testing(bias):
     globals
@@ -141,11 +156,11 @@ def driver(rand, bias, shuffle, num_epoch):
     generate_weight_vec(rand)
     for i in range(0, num_epoch):
         training(data, label, i, shuffle)
-        print("Epoch {}".format(i))
-        testing(bias)
-        # if i == num_epoch - 1:
-        #     print("Epoch {}:".format(i), end = " ")
-        #     testing(bias)
+        # print("Epoch {}".format(i))
+        # testing(bias)
+        if i == num_epoch - 1:
+            print("Epoch {}:".format(i), end = " ")
+            testing(bias)
         #     weight_visualization()
 
 def weight_visualization():
@@ -154,4 +169,4 @@ def weight_visualization():
         plt.imshow(np.array(w_vec[i][:1024]).reshape(32, 32), interpolation = 'nearest')
         plt.show()
 
-driver(rand = False, bias = False, shuffle = False, num_epoch = 4)
+driver(rand = False, bias = False, shuffle = False, num_epoch = 1)
